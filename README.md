@@ -13,33 +13,51 @@ Tolca checks a Québec construction contractor against:
 The answer is deterministic JSON (no LLM in the loop): `ok`, `review`, `blocking` or `not_found`, with reasons, sources and extraction dates. Data is refreshed daily from Données Québec (CC-BY 4.0).
 
 - **Website (humans, pay by card):** https://tolca.tonbot.ca/verifier
-- **MCP server (free tier, 10 checks/day):** `https://tolca.tonbot.ca/mcp`
+- **Check a whole subcontractor list (up to 100, dated PDF report):** https://tolca.tonbot.ca/entreprises
+- **Free public MCP server (read-only, no account, no payment):** `https://tolca.tonbot.ca/mcp/public`
 - **x402 API (pay per call, $0.50 USDC on Base, no account, no API key):** `POST https://tolca.tonbot.ca/v1/qc-contractor-check`
 - Official MCP Registry name: `ca.tonbot.tolca/tolca`
 
 ## Use it in Claude, ChatGPT or any MCP client
 
-Claude Code:
-```bash
-claude mcp add --transport http tolca https://tolca.tonbot.ca/mcp
+Server URL (streamable HTTP, stateless, no authentication):
+```
+https://tolca.tonbot.ca/mcp/public
 ```
 
-Any MCP client that supports remote servers (streamable HTTP):
+Claude (web or desktop): Settings → Connectors → Add custom connector → paste the URL above.
+
+Claude Code:
+```bash
+claude mcp add --transport http tolca https://tolca.tonbot.ca/mcp/public
+```
+
+Any MCP client that supports remote servers:
 ```json
 {
   "mcpServers": {
-    "tolca": { "type": "http", "url": "https://tolca.tonbot.ca/mcp" }
+    "tolca": { "type": "http", "url": "https://tolca.tonbot.ca/mcp/public" }
   }
 }
 ```
 
 Then ask: *"Is Construction ABC inc. licensed with the RBQ, and is it listed in the RENA?"*
 
-Tool: `qc_contractor_check` with one of `neq` (10 digits), `licence` (RBQ licence number) or `name`, plus optional `lang` (`fr` or `en`).
+### Tools (all read-only, free)
 
-## Pay per call from code (x402)
+| Tool | What it does | Free limit |
+|---|---|---|
+| `qc_contractor_check` | RBQ licence + RENA + environmental penalties, with a verdict `ok` / `review` / `blocking` / `not_found` | 10 per day |
+| `qc_licence` | Fast check: does this business hold an active RBQ licence right now? | 50 per day |
+| `pkg_check` | Is this npm or PyPI package safe to install? (vulnerabilities, abandonment, typosquat signals) | 100 per day |
 
-No signup. Your agent pays $0.50 USDC on Base per check and gets the JSON back.
+Input for the Québec tools: one of `neq` (10 digits), `licence` (RBQ licence number) or `name`, plus optional `lang` (`fr` or `en`).
+
+Server card: https://tolca.tonbot.ca/.well-known/mcp/server-card.json
+
+## Pay per call from code (x402, for agents)
+
+Separate from the free MCP server above. No signup. Your agent pays $0.50 USDC on Base per check and gets the JSON back.
 
 See [`examples/check.mjs`](examples/check.mjs):
 ```bash
@@ -97,7 +115,8 @@ Régie du bâtiment du Québec, Autorité des marchés publics, Ministère de l'
 Tolca vérifie un entrepreneur en construction du Québec en un seul appel: licence RBQ active, inscription au RENA (non admissible aux contrats et sous-contrats publics) et sanctions environnementales. Verdict clair avec sources datées.
 
 - Particuliers et entreprises, paiement par carte: https://tolca.tonbot.ca/verifier
-- Serveur MCP gratuit (10 vérifications par jour): `https://tolca.tonbot.ca/mcp`
+- Vérifier toute une liste de sous-traitants (jusqu'à 100, rapport PDF daté): https://tolca.tonbot.ca/entreprises
+- Serveur MCP public et gratuit, à ajouter dans Claude ou ChatGPT: `https://tolca.tonbot.ca/mcp/public`
 - API x402 à 0,50 $ US en USDC (Base), sans compte
 
 Contact: yasser@tonbot.ca
