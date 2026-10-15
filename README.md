@@ -49,7 +49,6 @@ Then ask: *"Is Construction ABC inc. licensed with the RBQ, and is it listed in 
 |---|---|---|
 | `qc_contractor_check` | RBQ licence + RENA + environmental penalties, with a verdict `ok` / `review` / `blocking` / `not_found` | 10 per day |
 | `qc_licence` | Fast check: does this business hold an active RBQ licence right now? | 50 per day |
-| `pkg_check` | Is this npm or PyPI package safe to install? (vulnerabilities, abandonment, typosquat signals) | 100 per day |
 
 Input for the Québec tools: one of `neq` (10 digits), `licence` (RBQ licence number) or `name`, plus optional `lang` (`fr` or `en`).
 
