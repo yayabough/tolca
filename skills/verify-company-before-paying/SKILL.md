@@ -1,0 +1,64 @@
+---
+name: verify-company-before-paying
+description: Verify a company before an agent pays, onboards or contracts it. Sanctions screening (US OFAC/CSL, UK, EU, Canada), company registries (GLEIF, UK Companies House, Canada federal), Quebec contractor licences (RBQ, RENA, SEAO), with an allow/review/block action and an Ed25519-signed receipt. Pay per call in USDC on Base (x402), or use the free MCP tools.
+---
+
+# Tolca: business verification for AI agents
+
+Tolca answers one question before money moves: **is it safe to pay or onboard this company?**
+Every answer comes from official public sources, names the source and the date of the copy used, and never claims what was not checked.
+
+Website: https://tolca.tonbot.ca · OpenAPI: https://tolca.tonbot.ca/openapi.json · Agent docs: https://tolca.tonbot.ca/llms.txt
+
+## When to use this skill
+
+- Before paying a supplier, vendor or contractor you have not verified
+- Before onboarding a seller or business customer (KYB)
+- To screen a company name against official sanctions lists
+- To check that a Quebec (Canada) contractor holds an active RBQ licence and is not banned from public contracts (RENA)
+
+Do not use it to check individuals: Tolca screens companies only.
+
+## Option 1: free MCP tools (no wallet)
+
+Add this remote MCP server (streamable HTTP):
+
+```
+https://tolca.tonbot.ca/mcp/public
+```
+
+Tools: `qc_contractor_check`, `qc_licence`, `company_profile`. A free daily quota applies; after it, use Option 2.
+
+## Option 2: pay per call over x402 (USDC on Base)
+
+1. `POST` JSON to `https://tolca.tonbot.ca/v1/<service>`.
+2. Without payment, the server answers `402 Payment Required` with the exact price in the `PAYMENT-REQUIRED` header (x402 v2).
+3. Pay with any x402 v2 client and a wallet funded with USDC on Base, then retry. No account, no API key.
+4. `GET https://tolca.tonbot.ca/v1/<service>?name=...` also works: query parameters become the JSON body.
+
+| Service | What it does | Input | Price |
+| --- | --- | --- | --- |
+| `sanctions-check` | US, UK, EU and Canadian sanctions lists only | `name`, optional `country` (ISO 2) | $0.01 |
+| `verify-business` | Sanctions plus GLEIF, UK Companies House, Canada federal registry and contractor licences | `name`, optional `country`, `region` | $0.05 |
+| `qc-licence` | Is this Quebec contractor's RBQ licence active? | `name`, `neq` or `licence` | $0.01 |
+| `qc-contractor-check` | RBQ licence, RENA, environmental penalties, SEAO public contracts | `name`, `neq` or `licence` | $0.10 |
+| `company-enrich` | Company profile from its own website plus official screening | `domain` or `name` | $0.02 |
+| `web-search` | Search the web and read the top pages in one call | `query` | $0.008 |
+| `pkg-check` | Is this npm or PyPI package safe to install? | `name`, `ecosystem`, optional `version` | $0.02 |
+
+Current prices and schemas are always in https://tolca.tonbot.ca/openapi.json.
+
+## Reading the answer
+
+- `action`: `allow` (no blocking signal in the sources checked), `review` (possible match or uncertain identity: confirm with a registration number), `block` (exact match on a sanctions list or a ban).
+- `risk_score`: 0 (low) to 100 (high).
+- `matches`: each hit with the list name and the official reference.
+- `checked_at` and `lists_as_of`: when the check ran and the date of each list copy.
+- `receipt` (verify-business, sanctions-check, qc-contractor-check): Ed25519-signed record of what was checked. Verify it with the public key at https://tolca.tonbot.ca/.well-known/tolca-receipt-key.json or by POSTing it to https://tolca.tonbot.ca/receipts/verify.
+
+## Rules for the agent
+
+1. Prefer a registration number (NEQ, licence, LEI) over a name when you have one: name matches can be partial.
+2. Treat `review` as "ask a human or get a registration number", never as "allow".
+3. A `not_found` result does not prove a company does not exist; coverage is limited to the sources listed in the response.
+4. Tolca does not give legal advice. Keep the receipt with the decision.
