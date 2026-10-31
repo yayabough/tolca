@@ -2,13 +2,26 @@
 
 **Québec contractor check, company verification and web search for AI agents. Official registries, deterministic JSON, pay per call.**
 
+## Use Tolca in Claude / Utiliser Tolca dans Claude
+
+[**Add Tolca to Claude / Ajouter Tolca à Claude**](https://claude.ai/directory/tolca) (free, no account / gratuit, sans compte)
+
+Then ask Claude / Puis demandez à Claude : *"Is Gignac Construction's RBQ licence active?"*
+
+## Agent skill
+
+```bash
+npx skills add yayabough/tolca
+```
+
 Tolca answers three questions in one call each:
 
 | Question | Tool / endpoint | What it checks |
 |---|---|---|
 | Is this Québec contractor safe to hire? | `qc_contractor_check` / `POST /v1/qc-contractor-check` | RBQ active licence (Régie du bâtiment), RENA (barred from public contracts, Autorité des marchés publics), environmental penalties (MELCCFP), SEAO public contracts awarded in the last 12 months |
 | Does this contractor hold an active RBQ licence right now? | `qc_licence` / `POST /v1/qc-licence` | Fast yes/no with licence number and status |
-| Is this company real and clean? | `business_verification` / `POST /v1/verify-business` | US sanctions (OFAC/CSL), Canadian federal corporations, UK Companies House, GLEIF |
+| Is this company real and clean? | `business_verification` / `POST /v1/verify-business` | US, UK, EU and Canadian sanctions lists, Canadian federal corporations, UK Companies House, GLEIF |
+| Is this company on a sanctions list? | `POST /v1/sanctions-check` | US (OFAC/CSL), UK (FCDO), EU and Canada (Global Affairs Canada) sanctions lists only, $0.01 per check |
 | What does the web say, with sources? | `web_search` / `POST /v1/web-search` | 10 results plus the clean text of the top pages (title, text, sha256, fetch time). French/Canada by default, official-sources mode (.gc.ca, .gouv.qc.ca, .gov, CanLII) |
 
 Answers are deterministic JSON (no LLM in the loop): a verdict `ok` / `review` / `blocking` / `not_found`, reasons, sources with extraction dates, and a `proof` block (sha256 of the answer). Registry data is refreshed daily from Données Québec (CC-BY 4.0) and the federal and international sources listed below.
