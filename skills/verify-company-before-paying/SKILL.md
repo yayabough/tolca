@@ -10,6 +10,8 @@ Every answer comes from official public sources, names the source and the date o
 
 Website: https://tolca.tonbot.ca · OpenAPI: https://tolca.tonbot.ca/openapi.json · Agent docs: https://tolca.tonbot.ca/llms.txt
 
+In Claude: add Tolca from the connector directory, https://claude.ai/directory/tolca (free, no account).
+
 ## When to use this skill
 
 - Before paying a supplier, vendor or contractor you have not verified
@@ -28,6 +30,37 @@ https://tolca.tonbot.ca/mcp/public
 ```
 
 Tools: `qc_contractor_check`, `qc_licence`, `company_profile`. A free daily quota applies; after it, use Option 2.
+
+## Use it from an agent framework
+
+The free MCP server works with any framework that speaks MCP over streamable HTTP.
+
+CrewAI:
+
+```python
+from crewai import Agent
+from crewai.mcp import MCPServerHTTP
+
+agent = Agent(
+    role="Payments compliance",
+    goal="Check every supplier before it is paid",
+    backstory="Never pays a company that Tolca blocks",
+    mcps=[MCPServerHTTP(url="https://tolca.tonbot.ca/mcp/public", streamable=True)],
+)
+```
+
+LangChain / LangGraph (`pip install langchain-mcp-adapters`):
+
+```python
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    "tolca": {"url": "https://tolca.tonbot.ca/mcp/public", "transport": "streamable_http"}
+})
+tools = await client.get_tools()
+```
+
+Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Point it at `https://tolca.tonbot.ca/v1/sanctions-check?name=<company>`: `make_http_request` returns the price, then `retry_http_request_with_x402` pays $0.01 in USDC and returns the verdict.
 
 ## Option 2: pay per call over x402 (USDC on Base)
 
@@ -62,3 +95,4 @@ Current prices and schemas are always in https://tolca.tonbot.ca/openapi.json.
 2. Treat `review` as "ask a human or get a registration number", never as "allow".
 3. A `not_found` result does not prove a company does not exist; coverage is limited to the sources listed in the response.
 4. Tolca does not give legal advice. Keep the receipt with the decision.
+5. The agent pays Tolca for the check itself, whatever the verdict. `allow` / `review` / `block` is about paying the company that was checked, not about paying Tolca.
