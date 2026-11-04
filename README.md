@@ -1,6 +1,6 @@
 # Tolca: know who you're paying before you pay
 
-**Québec contractor check, company verification and web search for AI agents. Official registries, deterministic JSON, pay per call.**
+**Check an x402 payment request before your agent pays it, plus Québec contractor checks, company verification and web search for AI agents. Official sources, deterministic JSON, pay per call.**
 
 ## Use Tolca in Claude / Utiliser Tolca dans Claude
 
@@ -14,10 +14,11 @@ Then ask Claude / Puis demandez à Claude : *"Is Gignac Construction's RBQ licen
 npx skills add yayabough/tolca
 ```
 
-Tolca answers three questions in one call each:
+Tolca answers these questions in one call each:
 
 | Question | Tool / endpoint | What it checks |
 |---|---|---|
+| Is this x402 payment request safe to pay? | `payment_check` / `POST /v1/payment-check` | The payTo wallet against the crypto addresses on the US Treasury SDN list, official USDC on Base, the expected network, the price and the wallet compared with the x402 Bazaar catalogue, optional seller name screening. $0.01 per check |
 | Is this Québec contractor safe to hire? | `qc_contractor_check` / `POST /v1/qc-contractor-check` | RBQ active licence (Régie du bâtiment), RENA (barred from public contracts, Autorité des marchés publics), environmental penalties (MELCCFP), SEAO public contracts awarded in the last 12 months |
 | Does this contractor hold an active RBQ licence right now? | `qc_licence` / `POST /v1/qc-licence` | Fast yes/no with licence number and status |
 | Is this company real and clean? | `business_verification` / `POST /v1/verify-business` | US, UK, EU and Canadian sanctions lists, Canadian federal corporations, UK Companies House, GLEIF |
@@ -78,6 +79,8 @@ No signup. Your agent gets a `402 Payment Required`, pays in USDC on Base, and g
 |---|---|
 | `POST /v1/web-search` | 0.008 |
 | `POST /v1/qc-licence` | 0.01 |
+| `POST /v1/sanctions-check` | 0.01 |
+| `POST /v1/payment-check` | 0.01 |
 | `POST /v1/verify-business` | 0.05 |
 | `POST /v1/qc-contractor-check` | 0.10 |
 
@@ -93,6 +96,13 @@ Without a payment, the endpoint answers `402 Payment Required` with the price in
 ```bash
 curl -i -X POST https://tolca.tonbot.ca/v1/qc-contractor-check \
   -H "content-type: application/json" -d '{"name":"Neolect"}'
+```
+
+Check a seller's payment request before paying it (see [`examples/payment-check.mjs`](examples/payment-check.mjs)):
+```bash
+curl -i -X POST https://tolca.tonbot.ca/v1/payment-check \
+  -H "content-type: application/json" \
+  -d '{"requirements":{"network":"eip155:8453","asset":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","payTo":"0x...","amount":"10000","resource":"https://seller.example/api"}}'
 ```
 
 Web search example:
@@ -149,6 +159,7 @@ Régie du bâtiment du Québec, Autorité des marchés publics, Ministère de l'
 
 Tolca vérifie un entrepreneur en construction du Québec en un seul appel: licence RBQ active, inscription au RENA (non admissible aux contrats et sous-contrats publics), sanctions environnementales et contrats publics octroyés au SEAO sur 12 mois. Verdict clair avec sources datées. Aussi: vérification d'entreprise (sanctions, registres fédéraux et internationaux) et recherche web qui lit les pages pour vous.
 
+- Vérifier une demande de paiement x402 avant que votre agent paie (portefeuille sur la liste SDN, faux jeton, prix gonflé, adresse remplacée): 0,01 $ par vérification
 - Particuliers et entreprises, paiement par carte: https://tolca.tonbot.ca/verifier
 - Vérifier toute une liste de sous-traitants (jusqu'à 100, rapport PDF daté): https://tolca.tonbot.ca/entreprises
 - Serveur MCP public et gratuit, à ajouter dans Claude ou ChatGPT: `https://tolca.tonbot.ca/mcp/public`

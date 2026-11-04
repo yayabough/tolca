@@ -1,6 +1,6 @@
 ---
 name: verify-company-before-paying
-description: Verify a company before an agent pays, onboards or contracts it. Sanctions screening (US OFAC/CSL, UK, EU, Canada), company registries (GLEIF, UK Companies House, Canada federal), Quebec contractor licences (RBQ, RENA, SEAO), with an allow/review/block action and an Ed25519-signed receipt. Pay per call in USDC on Base (x402), or use the free MCP tools.
+description: Verify a company or an x402 payment request before an agent pays, onboards or contracts it. Screens the payTo wallet of a 402 invoice against the OFAC SDN list and checks its token, network and price, plus sanctions screening (US OFAC/CSL, UK, EU, Canada), company registries (GLEIF, UK Companies House, Canada federal), Quebec contractor licences (RBQ, RENA, SEAO), with an allow/review/block action and an Ed25519-signed receipt. Pay per call in USDC on Base (x402), or use the free MCP tools.
 ---
 
 # Tolca: business verification for AI agents
@@ -14,12 +14,35 @@ In Claude: add Tolca from the connector directory, https://claude.ai/directory/t
 
 ## When to use this skill
 
+- Before your agent pays an x402 seller: send the seller's 402 payment request to `payment-check` first
 - Before paying a supplier, vendor or contractor you have not verified
 - Before onboarding a seller or business customer (KYB)
 - To screen a company name against official sanctions lists
 - To check that a Quebec (Canada) contractor holds an active RBQ licence and is not banned from public contracts (RENA)
 
 Do not use it to check individuals: Tolca screens companies only.
+
+## Check an x402 payment request before paying
+
+When a seller answers `402 Payment Required`, send its payment request to Tolca before you sign anything:
+
+```
+POST https://tolca.tonbot.ca/v1/payment-check
+{ "payment_required": <the seller's full 402 body or decoded PAYMENT-REQUIRED header> }
+```
+
+You can also send `requirements` (one entry of the `accepts` array), plus optional `seller_name` and `seller_country` (ISO 2) to screen the company behind the wallet.
+
+Tolca checks, in one call ($0.01):
+
+1. the `payTo` wallet against the crypto addresses on the US Treasury SDN list, refreshed daily;
+2. that the token is the official USDC contract on Base, not a look-alike;
+3. that the network is the expected one (a testnet or another chain is flagged);
+4. the amount against the price the same resource lists in the x402 Bazaar catalogue;
+5. the `payTo` wallet against the wallet the catalogue lists for that resource (a swapped address gives `review`);
+6. if you pass `seller_name`, the company against US, UK, EU and Canadian sanctions lists.
+
+The answer gives `action` (`allow`, `review` or `block`), `reasons`, `invoice_sha256` (a fingerprint of the exact invoice checked), `valid_until` (10 minutes), a `nonce` and a signed `receipt`.
 
 ## Option 1: free MCP tools (no wallet)
 
@@ -71,6 +94,7 @@ Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Poi
 
 | Service | What it does | Input | Price |
 | --- | --- | --- | --- |
+| `payment-check` | Check an x402 payment request before paying it: payTo wallet vs the OFAC SDN list, official USDC on Base, network, price and wallet vs the x402 Bazaar catalogue | `payment_required` (402 body) or `requirements`, optional `seller_name`, `seller_country` | $0.01 |
 | `sanctions-check` | US, UK, EU and Canadian sanctions lists only | `name`, optional `country` (ISO 2) | $0.01 |
 | `verify-business` | Sanctions plus GLEIF, UK Companies House, Canada federal registry and contractor licences | `name`, optional `country`, `region` | $0.05 |
 | `qc-licence` | Is this Quebec contractor's RBQ licence active? | `name`, `neq` or `licence` | $0.01 |
@@ -81,13 +105,16 @@ Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Poi
 
 Current prices and schemas are always in https://tolca.tonbot.ca/openapi.json.
 
+The same services are also tools on the paid MCP server `https://tolca.tonbot.ca/mcp` (for example `payment_check`, `sanctions_check`, `verify_business`): send your x402 payment in the `PAYMENT-SIGNATURE` header.
+
 ## Reading the answer
 
 - `action`: `allow` (no blocking signal in the sources checked), `review` (possible match or uncertain identity: confirm with a registration number), `block` (exact match on a sanctions list or a ban).
 - `risk_score`: 0 (low) to 100 (high).
 - `matches`: each hit with the list name and the official reference.
 - `checked_at` and `lists_as_of`: when the check ran and the date of each list copy.
-- `receipt` (verify-business, sanctions-check, qc-contractor-check): Ed25519-signed record of what was checked. Verify it with the public key at https://tolca.tonbot.ca/.well-known/tolca-receipt-key.json or by POSTing it to https://tolca.tonbot.ca/receipts/verify.
+- `invoice_sha256`, `valid_until` and `nonce` (payment-check): which invoice was checked and until when the verdict holds.
+- `receipt` (payment-check, verify-business, sanctions-check, qc-contractor-check): Ed25519-signed record of what was checked. Verify it with the public key at https://tolca.tonbot.ca/.well-known/tolca-receipt-key.json or by POSTing it to https://tolca.tonbot.ca/receipts/verify.
 
 ## Rules for the agent
 
@@ -95,4 +122,5 @@ Current prices and schemas are always in https://tolca.tonbot.ca/openapi.json.
 2. Treat `review` as "ask a human or get a registration number", never as "allow".
 3. A `not_found` result does not prove a company does not exist; coverage is limited to the sources listed in the response.
 4. Tolca does not give legal advice. Keep the receipt with the decision.
-5. The agent pays Tolca for the check itself, whatever the verdict. `allow` / `review` / `block` is about paying the company that was checked, not about paying Tolca.
+5. For payment-check, pay only the invoice that was checked (same `invoice_sha256`) and before `valid_until`. If the seller sends a new 402, check it again.
+6. The agent pays Tolca for the check itself, whatever the verdict. `allow` / `review` / `block` is about paying the company that was checked, not about paying Tolca.
