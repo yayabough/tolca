@@ -18,14 +18,15 @@ Tolca answers these questions in one call each:
 
 | Question | Tool / endpoint | What it checks |
 |---|---|---|
-| Is this x402 payment request safe to pay? | `payment_check` / `POST /v1/payment-check` | The payTo wallet against the crypto addresses on the US Treasury SDN list, official USDC on Base, the expected network, the price and the wallet compared with the x402 Bazaar catalogue, optional seller name screening. $0.01 per check |
+| Is this x402 payment request safe to pay? | `payment_check` / `POST /v1/payment-check` | Send the seller's 402 or just its URL. The payTo wallet against the crypto addresses on the US Treasury SDN list, official USDC on 13 networks (Base, Polygon, Arbitrum, Avalanche, Ethereum, Solana, Arc and more), the price and the wallet compared with the seller's live Coinbase x402 Bazaar listing, optional seller name screening. $0.01 per check |
 | Is this Québec contractor safe to hire? | `qc_contractor_check` / `POST /v1/qc-contractor-check` | RBQ active licence (Régie du bâtiment), RENA (barred from public contracts, Autorité des marchés publics), environmental penalties (MELCCFP), SEAO public contracts awarded in the last 12 months |
 | Does this contractor hold an active RBQ licence right now? | `qc_licence` / `POST /v1/qc-licence` | Fast yes/no with licence number and status |
 | Is this company real and clean? | `business_verification` / `POST /v1/verify-business` | US, UK, EU and Canadian sanctions lists, Canadian federal corporations, UK Companies House, GLEIF |
 | Is this company on a sanctions list? | `POST /v1/sanctions-check` | US (OFAC/CSL), UK (FCDO), EU and Canada (Global Affairs Canada) sanctions lists only, $0.01 per check |
+| Who is this company and how do I reach it? | `company_profile` / `POST /v1/company-enrich` | Profile read live from the company's own website (what it does, services, area, published phones and emails with their source page) plus official screening. $0.02 per profile |
 | What does the web say, with sources? | `web_search` / `POST /v1/web-search` | 10 results plus the clean text of the top pages (title, text, sha256, fetch time). French/Canada by default, official-sources mode (.gc.ca, .gouv.qc.ca, .gov, CanLII) |
 
-Answers are deterministic JSON (no LLM in the loop): a verdict `ok` / `review` / `blocking` / `not_found`, reasons, sources with extraction dates, and a `proof` block (sha256 of the answer). Registry data is refreshed daily from Données Québec (CC-BY 4.0) and the federal and international sources listed below.
+Checks are deterministic JSON (no LLM in the loop; only `company_profile` / `company-enrich` uses an AI model, to summarize the company's website): a verdict `ok` / `review` / `blocking` / `not_found`, reasons, sources with extraction dates, and a `proof` block (sha256 of the answer). Registry data is refreshed daily from Données Québec (CC-BY 4.0) and the federal and international sources listed below.
 
 - **Website (humans, pay by card):** https://tolca.tonbot.ca/verifier
 - **Check a whole subcontractor list (up to 100, dated PDF report):** https://tolca.tonbot.ca/entreprises
@@ -66,8 +67,10 @@ Then ask: *"Is Construction ABC inc. licensed with the RBQ, listed in the RENA, 
 |---|---|---|
 | `qc_contractor_check` | RBQ licence + RENA + environmental penalties + SEAO public contracts, with a verdict | 10 per day |
 | `qc_licence` | Does this business hold an active RBQ licence right now? | 50 per day |
+| `company_profile` | Company profile from its own website plus official registries and sanctions screening | 20 per day |
+| `sanctions_check` | A company name against US, UK, EU and Canadian sanctions lists, with allow / review / block | 30 per day |
 
-Input: one of `neq` (10 digits), `licence` (RBQ licence number) or `name`, plus optional `lang` (`fr` or `en`).
+Input for the Québec tools: one of `neq` (10 digits), `licence` (RBQ licence number) or `name`, plus optional `lang` (`fr` or `en`). `company_profile` takes `domain` or `name`; `sanctions_check` takes `name`. Both accept an optional `country` as a code (`CA`) or a name (`Canada`).
 
 Server card: https://tolca.tonbot.ca/.well-known/mcp/server-card.json
 
@@ -81,6 +84,7 @@ No signup. Your agent gets a `402 Payment Required`, pays in USDC on Base, and g
 | `POST /v1/qc-licence` | 0.01 |
 | `POST /v1/sanctions-check` | 0.01 |
 | `POST /v1/payment-check` | 0.01 |
+| `POST /v1/company-enrich` | 0.02 |
 | `POST /v1/verify-business` | 0.05 |
 | `POST /v1/qc-contractor-check` | 0.10 |
 
@@ -98,7 +102,13 @@ curl -i -X POST https://tolca.tonbot.ca/v1/qc-contractor-check \
   -H "content-type: application/json" -d '{"name":"Neolect"}'
 ```
 
-Check a seller's payment request before paying it (see [`examples/payment-check.mjs`](examples/payment-check.mjs)):
+Check a seller's payment request before paying it (see [`examples/payment-check.mjs`](examples/payment-check.mjs)). Simplest: send just the seller's URL. Tolca asks the seller for its 402 without paying (GET, then POST) and checks it:
+```bash
+curl -i -X POST https://tolca.tonbot.ca/v1/payment-check \
+  -H "content-type: application/json" \
+  -d '{"url":"https://seller.example/api","network":"base"}'
+```
+`network` is optional: name the option you will pay with (`base`, `solana`, `polygon`, `eip155:5042`...) and Tolca checks that one. You can also send the 402 yourself:
 ```bash
 curl -i -X POST https://tolca.tonbot.ca/v1/payment-check \
   -H "content-type: application/json" \
@@ -151,7 +161,7 @@ Public data as of the extraction date shown in each answer. Name matching can re
 
 ## Data attribution
 
-Régie du bâtiment du Québec, Autorité des marchés publics, Ministère de l'Environnement, de la Lutte contre les changements climatiques, de la Faune et des Parcs, Système électronique d'appel d'offres (SEAO, OCDS). Données Québec, CC-BY 4.0. Corporations Canada, Companies House (UK), GLEIF, U.S. Consolidated Screening List. Web search powered by Brave Search.
+Régie du bâtiment du Québec, Autorité des marchés publics, Ministère de l'Environnement, de la Lutte contre les changements climatiques, de la Faune et des Parcs, Système électronique d'appel d'offres (SEAO, OCDS). Données Québec, CC-BY 4.0. Corporations Canada, Companies House (UK), GLEIF, U.S. Consolidated Screening List, UK Sanctions List (FCDO, contains public sector information licensed under the Open Government Licence v3.0), EU Consolidated Financial Sanctions List (European Commission), Consolidated Canadian Autonomous Sanctions List (Global Affairs Canada). x402 listings from the Coinbase x402 Bazaar. Web search powered by Brave Search.
 
 ---
 
@@ -159,10 +169,10 @@ Régie du bâtiment du Québec, Autorité des marchés publics, Ministère de l'
 
 Tolca vérifie un entrepreneur en construction du Québec en un seul appel: licence RBQ active, inscription au RENA (non admissible aux contrats et sous-contrats publics), sanctions environnementales et contrats publics octroyés au SEAO sur 12 mois. Verdict clair avec sources datées. Aussi: vérification d'entreprise (sanctions, registres fédéraux et internationaux) et recherche web qui lit les pages pour vous.
 
-- Vérifier une demande de paiement x402 avant que votre agent paie (portefeuille sur la liste SDN, faux jeton, prix gonflé, adresse remplacée): 0,01 $ par vérification
+- Vérifier une demande de paiement x402 avant que votre agent paie (portefeuille sur la liste SDN, faux jeton, prix gonflé, adresse remplacée), sur 13 réseaux, en envoyant juste l'URL du vendeur: 0,01 $ par vérification
 - Particuliers et entreprises, paiement par carte: https://tolca.tonbot.ca/verifier
 - Vérifier toute une liste de sous-traitants (jusqu'à 100, rapport PDF daté): https://tolca.tonbot.ca/entreprises
-- Serveur MCP public et gratuit, à ajouter dans Claude ou ChatGPT: `https://tolca.tonbot.ca/mcp/public`
+- Serveur MCP public et gratuit, à ajouter dans Claude ou ChatGPT: `https://tolca.tonbot.ca/mcp/public` (entrepreneurs du Québec, fiche d'entreprise, listes de sanctions)
 - API x402 en USDC (Base), sans compte: de 0,008 $ (recherche web) à 0,10 $ (vérification complète) par appel
 
 Contact: yasser@tonbot.ca

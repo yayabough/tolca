@@ -24,22 +24,29 @@ Do not use it to check individuals: Tolca screens companies only.
 
 ## Check an x402 payment request before paying
 
-When a seller answers `402 Payment Required`, send its payment request to Tolca before you sign anything:
+Before you sign anything, send the seller's URL to Tolca. Tolca asks the seller for its 402 payment request without paying (GET, then POST) and checks it:
+
+```
+POST https://tolca.tonbot.ca/v1/payment-check
+{ "url": "https://seller.example/api", "network": "base" }
+```
+
+Or send the payment request yourself:
 
 ```
 POST https://tolca.tonbot.ca/v1/payment-check
 { "payment_required": <the seller's full 402 body or decoded PAYMENT-REQUIRED header> }
 ```
 
-You can also send `requirements` (one entry of the `accepts` array), plus optional `seller_name` and `seller_country` (ISO 2) to screen the company behind the wallet.
+You can also send `requirements` (one entry of the `accepts` array). `network` is optional: name the option you will pay with (`base`, `solana`, `polygon`, `eip155:5042`...) and Tolca checks that one. Add `seller_name` and `seller_country` (ISO 2) to screen the company behind the wallet.
 
 Tolca checks, in one call ($0.01):
 
 1. the `payTo` wallet against the crypto addresses on the US Treasury SDN list, refreshed daily;
-2. that the token is the official USDC contract on Base, not a look-alike;
-3. that the network is the expected one (a testnet or another chain is flagged);
-4. the amount against the price the same resource lists in the x402 Bazaar catalogue;
-5. the `payTo` wallet against the wallet the catalogue lists for that resource (a swapped address gives `review`);
+2. that the token is the official USDC contract on its network, not a look-alike (13 networks: Base, Polygon, Arbitrum, Avalanche, Sei, Monad, World Chain, Celo, Ethereum, X Layer, Arc, XDC and Solana);
+3. that the network is a known mainnet (a testnet, or a network where official USDC cannot be confirmed, gives `review`);
+4. the amount against the price in the seller's live Coinbase x402 Bazaar listing (more than 5% above gives `block`);
+5. the `payTo` wallet against the wallet(s) that listing has for the resource (a swapped address gives `review`);
 6. if you pass `seller_name`, the company against US, UK, EU and Canadian sanctions lists.
 
 The answer gives `action` (`allow`, `review` or `block`), `reasons`, `invoice_sha256` (a fingerprint of the exact invoice checked), `valid_until` (10 minutes), a `nonce` and a signed `receipt`.
@@ -52,7 +59,7 @@ Add this remote MCP server (streamable HTTP):
 https://tolca.tonbot.ca/mcp/public
 ```
 
-Tools: `qc_contractor_check`, `qc_licence`, `company_profile`. A free daily quota applies; after it, use Option 2.
+Tools: `qc_contractor_check`, `qc_licence`, `company_profile`, `sanctions_check`. A free daily quota applies; after it, use Option 2.
 
 ## Use it from an agent framework
 
@@ -94,7 +101,7 @@ Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Poi
 
 | Service | What it does | Input | Price |
 | --- | --- | --- | --- |
-| `payment-check` | Check an x402 payment request before paying it: payTo wallet vs the OFAC SDN list, official USDC on Base, network, price and wallet vs the x402 Bazaar catalogue | `payment_required` (402 body) or `requirements`, optional `seller_name`, `seller_country` | $0.01 |
+| `payment-check` | Check an x402 payment request before paying it: payTo wallet vs the OFAC SDN list, official USDC on 13 networks, price and wallet vs the seller's live Coinbase x402 Bazaar listing | `url` (seller URL), `payment_required` (402 body) or `requirements`, optional `network`, `seller_name`, `seller_country` | $0.01 |
 | `sanctions-check` | US, UK, EU and Canadian sanctions lists only | `name`, optional `country` (ISO 2) | $0.01 |
 | `verify-business` | Sanctions plus GLEIF, UK Companies House, Canada federal registry and contractor licences | `name`, optional `country`, `region` | $0.05 |
 | `qc-licence` | Is this Quebec contractor's RBQ licence active? | `name`, `neq` or `licence` | $0.01 |

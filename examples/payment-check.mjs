@@ -21,6 +21,7 @@ const header = first.headers.get("payment-required");
 const paymentRequired = header ? JSON.parse(Buffer.from(header, "base64").toString("utf8")) : await first.json();
 
 // 2. Ask Tolca before paying the seller ($0.01).
+//    Shortcut: send { url: sellerUrl } instead and Tolca fetches the 402 itself (GET, then POST).
 const res = await paidFetch("https://tolca.tonbot.ca/v1/payment-check", {
   method: "POST",
   headers: { "content-type": "application/json" },

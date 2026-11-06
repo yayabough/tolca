@@ -6,7 +6,7 @@ Powered by Tolca (https://tolca.tonbot.ca). Every answer comes from official pub
 
 ## What it checks
 
-- **x402 payment requests**: the payTo wallet against the crypto addresses on the US Treasury SDN list, official USDC on Base, the expected network, and the price and wallet compared with the x402 Bazaar catalogue.
+- **x402 payment requests** (send the 402 or just the seller's URL): the payTo wallet against the crypto addresses on the US Treasury SDN list, official USDC on 13 networks (Base, Polygon, Arbitrum, Avalanche, Ethereum, Solana, Arc and more), and the price and wallet compared with the seller's live Coinbase x402 Bazaar listing.
 - **Sanctions** in 4 jurisdictions: US Consolidated Screening List (incl. OFAC SDN and the Entity List), UK Sanctions List (FCDO), EU Consolidated Financial Sanctions List, Canada's Consolidated Autonomous Sanctions List. UN designations are covered as implemented by the UK and the EU.
 - **Company registries**: UK Companies House, Canada federal corporations, GLEIF legal entities.
 - **Québec contractors**: RBQ licence and subcategories, RENA (public-contract ban), environmental penalties, SEAO public contracts.
