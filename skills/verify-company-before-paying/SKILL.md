@@ -102,13 +102,13 @@ Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Poi
 | Service | What it does | Input | Price |
 | --- | --- | --- | --- |
 | `payment-check` | Check an x402 payment request before paying it: payTo wallet vs the OFAC SDN list, official USDC on 13 networks, price and wallet vs the seller's live Coinbase x402 Bazaar listing | `url` (seller URL), `payment_required` (402 body) or `requirements`, optional `network`, `seller_name`, `seller_country` | $0.01 |
-| `sanctions-check` | US, UK, EU and Canadian sanctions lists only | `name`, optional `country` (ISO 2) | $0.01 |
+| `sanctions-check` | US, UK, EU and Canadian sanctions lists only | `name`, optional `country` (ISO 2) | $0.005 |
 | `verify-business` | Sanctions plus GLEIF, UK Companies House, Canada federal registry and contractor licences | `name`, optional `country`, `region` | $0.05 |
 | `qc-licence` | Is this Quebec contractor's RBQ licence active? | `name`, `neq` or `licence` | $0.01 |
 | `qc-contractor-check` | RBQ licence, RENA, environmental penalties, SEAO public contracts | `name`, `neq` or `licence` | $0.10 |
 | `company-enrich` | Company profile from its own website plus official screening | `domain` or `name` | $0.02 |
 | `web-search` | Search the web and read the top pages in one call | `query` | $0.008 |
-| `pkg-check` | Is this npm or PyPI package safe to install? | `name`, `ecosystem`, optional `version` | $0.02 |
+| `pkg-check` | Is this npm or PyPI package safe to install? | `name`, `ecosystem`, optional `version` | $0.003 |
 
 Current prices and schemas are always in https://tolca.tonbot.ca/openapi.json.
 

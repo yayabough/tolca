@@ -22,7 +22,7 @@ Tolca answers these questions in one call each:
 | Is this Québec contractor safe to hire? | `qc_contractor_check` / `POST /v1/qc-contractor-check` | RBQ active licence (Régie du bâtiment), RENA (barred from public contracts, Autorité des marchés publics), environmental penalties (MELCCFP), SEAO public contracts awarded in the last 12 months |
 | Does this contractor hold an active RBQ licence right now? | `qc_licence` / `POST /v1/qc-licence` | Fast yes/no with licence number and status |
 | Is this company real and clean? | `business_verification` / `POST /v1/verify-business` | US, UK, EU and Canadian sanctions lists, Canadian federal corporations, UK Companies House, GLEIF |
-| Is this company on a sanctions list? | `POST /v1/sanctions-check` | US (OFAC/CSL), UK (FCDO), EU and Canada (Global Affairs Canada) sanctions lists only, $0.01 per check |
+| Is this company on a sanctions list? | `POST /v1/sanctions-check` | US (OFAC/CSL), UK (FCDO), EU and Canada (Global Affairs Canada) sanctions lists only, $0.005 per check |
 | Who is this company and how do I reach it? | `company_profile` / `POST /v1/company-enrich` | Profile read live from the company's own website (what it does, services, area, published phones and emails with their source page) plus official screening. $0.02 per profile |
 | What does the web say, with sources? | `web_search` / `POST /v1/web-search` | 10 results plus the clean text of the top pages (title, text, sha256, fetch time). French/Canada by default, official-sources mode (.gc.ca, .gouv.qc.ca, .gov, CanLII) |
 
@@ -80,9 +80,9 @@ No signup. Your agent gets a `402 Payment Required`, pays in USDC on Base, and g
 
 | Endpoint | Price (USDC) |
 |---|---|
+| `POST /v1/sanctions-check` | 0.005 |
 | `POST /v1/web-search` | 0.008 |
 | `POST /v1/qc-licence` | 0.01 |
-| `POST /v1/sanctions-check` | 0.01 |
 | `POST /v1/payment-check` | 0.01 |
 | `POST /v1/company-enrich` | 0.02 |
 | `POST /v1/verify-business` | 0.05 |

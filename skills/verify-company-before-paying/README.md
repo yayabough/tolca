@@ -21,7 +21,7 @@ Powered by Tolca (https://tolca.tonbot.ca). Every answer comes from official pub
 ## How to use it
 
 - **Free**: add the MCP server `https://tolca.tonbot.ca/mcp/public`, or add Tolca in Claude from https://claude.ai/directory/tolca
-- **Pay per call** over x402 in USDC on Base: $0.01 for payment-check and sanctions-check, $0.05 for verify-business
+- **Pay per call** over x402 in USDC on Base: $0.005 for sanctions-check, $0.01 for payment-check, $0.05 for verify-business
 - Works with CrewAI, LangChain / LangGraph and Coinbase AgentKit (see SKILL.md)
 
 Companies only. Not legal advice.

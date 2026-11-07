@@ -2,7 +2,7 @@
 
 **User:** Before we pay Huawei Technologies Co., Ltd. for equipment, run a vendor check.
 
-**Agent calls** `sanctions-check` with `{"name": "Huawei Technologies Co., Ltd."}` ($0.01).
+**Agent calls** `sanctions-check` with `{"name": "Huawei Technologies Co., Ltd."}` ($0.005).
 
 **Tolca answers (live check, Nov 1, 2026, abridged):**
 
