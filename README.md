@@ -36,6 +36,22 @@ Checks are deterministic JSON (no LLM in the loop; only `company_profile` / `com
 - **Official MCP Registry:** `io.github.yayabough/tolca`
 - **Apify Store (card payment, bulk lists):** [Québec Contractor Check](https://apify.com/tolca/quebec-contractor-check), [Business Verification](https://apify.com/tolca/business-verification), [Web Search Reader](https://apify.com/tolca/web-search-reader)
 
+## Drop-in for x402 agents: tolca-safe-pay
+
+Already paying with `@x402/fetch`? Change one line and every first payment to a new seller wallet is checked by `payment-check` before anything is signed. `allow` pays, `review` and `block` do not.
+
+```bash
+npm i tolca-safe-pay
+```
+
+```js
+import { wrapFetchWithSafePay } from "tolca-safe-pay";
+
+const fetchWithPay = wrapFetchWithSafePay(fetch, client); // was: wrapFetchWithPayment(fetch, client)
+```
+
+$0.01 per new seller wallet, verdict reused 24 h. Options, axios and the decision object: [`safe-pay/`](safe-pay/) and [npm](https://www.npmjs.com/package/tolca-safe-pay).
+
 ## Use it in Claude, ChatGPT, Cursor or any MCP client
 
 Server URL (streamable HTTP, stateless, no authentication):

@@ -51,6 +51,8 @@ Tolca checks, in one call ($0.01):
 
 The answer gives `action` (`allow`, `review` or `block`), `reasons`, `invoice_sha256` (a fingerprint of the exact invoice checked), `valid_until` (10 minutes), a `nonce` and a signed `receipt`.
 
+In JavaScript, `tolca-safe-pay` does this for you (`npm i tolca-safe-pay`): `wrapFetchWithSafePay(fetch, client)` replaces `wrapFetchWithPayment(fetch, client)` from `@x402/fetch`, checks each new seller wallet before the first payment, pays on `allow` and stops on `review` or `block`.
+
 ## Option 1: free MCP tools (no wallet)
 
 Add this remote MCP server (streamable HTTP):
@@ -90,7 +92,7 @@ client = MultiServerMCPClient({
 tools = await client.get_tools()
 ```
 
-Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Point it at `https://tolca.tonbot.ca/v1/sanctions-check?name=<company>`: `make_http_request` returns the price, then `retry_http_request_with_x402` pays $0.01 in USDC and returns the verdict.
+Coinbase AgentKit: its built-in x402 action provider can pay Tolca directly. Point it at `https://tolca.tonbot.ca/v1/sanctions-check?name=<company>`: `make_http_request` returns the price, then `retry_http_request_with_x402` pays $0.005 in USDC and returns the verdict.
 
 ## Option 2: pay per call over x402 (USDC on Base)
 
