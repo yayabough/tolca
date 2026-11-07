@@ -23,6 +23,8 @@ Then it acts on the answer:
 npm i tolca-safe-pay @x402/fetch @x402/evm viem
 ```
 
+Needs `@x402/fetch` 2.23.0 or later. Earlier 2.x clients had no default spending cap and other flaws fixed on August 18, 2026 ([V12 review, Cloud Security Alliance note](https://labs.cloudsecurityalliance.org/research/csa-research-note-x402-agent-payment-sdk-flaws-20261025-csa/)). Keep every `@x402/*` package on the same version.
+
 ## Use it with fetch
 
 ```js
