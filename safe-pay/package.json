@@ -1,0 +1,59 @@
+{
+  "name": "tolca-safe-pay",
+  "version": "0.1.0",
+  "description": "Drop-in safety check for x402 agent payments: before paying a new seller, ask Tolca payment-check (OFAC SDN wallet screen, official USDC, Coinbase Bazaar price and wallet match) and refuse block, stop on review.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/safe-pay.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@x402/fetch": "^2.0.0"
+  },
+  "devDependencies": {
+    "@x402/fetch": "2.30.0"
+  },
+  "keywords": [
+    "x402",
+    "x402-payments",
+    "agent-payments",
+    "ai-agent",
+    "agentic-commerce",
+    "payment-safety",
+    "ofac",
+    "sanctions",
+    "usdc",
+    "base",
+    "coinbase",
+    "bazaar",
+    "kyb",
+    "fraud-prevention"
+  ],
+  "author": "Yasser Boughazli",
+  "license": "MIT",
+  "homepage": "https://github.com/yayabough/tolca/tree/main/safe-pay#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yayabough/tolca.git",
+    "directory": "safe-pay"
+  },
+  "bugs": {
+    "url": "https://github.com/yayabough/tolca/issues"
+  }
+}
