@@ -4,7 +4,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { x402Client } from "@x402/fetch";
-import { wrapFetchWithSafePay, withSafePay, SafePayError, getSafePayDecision, TOLCA_PAY_TO } from "../index.js";
+import { wrapFetchWithSafePay, withSafePay, tolcaBeforePayment, SafePayError, getSafePayDecision, TOLCA_PAY_TO } from "../index.js";
 import { wrapFetchWithPayment } from "@x402/fetch";
 
 const BASE = "eip155:8453";
@@ -256,4 +256,54 @@ test("check call with another wallet and another resource URL: refused fast, not
   assert.deepEqual(decisions, ["error"], "no signature for the checker, no payment to the seller");
   assert.equal(state.checks.length, 0);
   assert.equal(state.sellerPaid, 0);
+});
+
+// tolcaBeforePayment: the hook alone, as a framework like AgentKit (beforePayment option) would register it.
+test("tolcaBeforePayment: hook on a framework's own client, check paid by a separate client", async () => {
+  reset();
+  const decisions = [];
+  const checkClient = makeClient();
+  const agentClient = makeClient();
+  agentClient.onBeforePaymentCreation(
+    tolcaBeforePayment({ client: checkClient, checkUrl: `${origin}/v1/payment-check`, onDecision: (d) => decisions.push(d.source) }),
+  );
+  const f = wrapFetchWithPayment(fetch, agentClient);
+  const r = await f(`${origin}/seller/${GOOD}`);
+  assert.equal(r.status, 200);
+  await f(`${origin}/seller/${GOOD}`);
+  assert.equal(state.checks.length, 1, "one paid check, verdict reused");
+  assert.equal(state.sellerPaid, 2);
+  await assert.rejects(f(`${origin}/seller/${BAD}`), (err) => {
+    assert.equal(getSafePayDecision(err)?.verdict, "block");
+    return true;
+  });
+  assert.equal(state.sellerPaid, 2, "blocked seller not paid");
+  assert.deepEqual(decisions, ["tolca", "cache", "tolca"]);
+});
+
+test("tolcaBeforePayment: same client pays the check and the seller, no loop", async () => {
+  reset();
+  const client = makeClient();
+  client.onBeforePaymentCreation(tolcaBeforePayment({ client, checkUrl: `${origin}/v1/payment-check` }));
+  const r = await wrapFetchWithPayment(fetch, client)(`${origin}/seller/${GOOD}`);
+  assert.equal(r.status, 200);
+  assert.equal(state.checks.length, 1);
+  assert.equal(state.sellerPaid, 1);
+});
+
+test("tolcaBeforePayment: check priced above the cap, nothing paid", async () => {
+  reset();
+  state.checkerAmount = "20000";
+  const agentClient = makeClient();
+  agentClient.onBeforePaymentCreation(tolcaBeforePayment({ client: makeClient(), checkUrl: `${origin}/v1/payment-check` }));
+  await assert.rejects(wrapFetchWithPayment(fetch, agentClient)(`${origin}/seller/${GOOD}`), (err) => {
+    assert.equal(getSafePayDecision(err)?.source, "error");
+    return true;
+  });
+  assert.equal(state.checks.length, 0);
+  assert.equal(state.sellerPaid, 0);
+});
+
+test("tolcaBeforePayment: needs a paying client", () => {
+  assert.throws(() => tolcaBeforePayment({}), TypeError);
 });

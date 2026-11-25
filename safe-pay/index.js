@@ -78,7 +78,25 @@ export function withSafePay(client, options = {}) {
   }
   if (guarded.has(client)) return client;
   guarded.add(client);
+  client.onBeforePaymentCreation(buildHook(client, options));
+  return client;
+}
 
+/**
+ * Returns a before-payment hook you can hand to any x402 client or framework that accepts one
+ * (for example `x402Client.onBeforePaymentCreation(hook)`, or AgentKit's x402 provider
+ * `beforePayment` option). `options.client` is the x402Client that pays Tolca's $0.01 check:
+ * register a scheme on it with the same wallet (or a small separate one).
+ */
+export function tolcaBeforePayment(options = {}) {
+  const client = options.client;
+  if (!client || typeof client.createPaymentPayload !== "function") {
+    throw new TypeError("tolcaBeforePayment needs options.client: an x402Client (from @x402/fetch or @x402/core 2.x) that pays the check");
+  }
+  return buildHook(client, options);
+}
+
+function buildHook(client, options) {
   const o = {
     checkUrl: options.checkUrl ?? TOLCA_CHECK_URL,
     checkerPayTo: lower(options.checkerPayTo ?? TOLCA_PAY_TO),
@@ -193,7 +211,7 @@ export function withSafePay(client, options = {}) {
     }
   }
 
-  client.onBeforePaymentCreation(async ({ paymentRequired, selectedRequirements }) => {
+  return async ({ paymentRequired, selectedRequirements }) => {
     const info = describe(paymentRequired, selectedRequirements);
 
     // The $0.01 payment for the check itself: Tolca's wallet, official USDC on Base, capped price.
@@ -248,9 +266,7 @@ export function withSafePay(client, options = {}) {
       });
     }
     return finish(info, { allowed: false, verdict: "block", source, check, reason: `block${risk}, not paid: ${reasons}` });
-  });
-
-  return client;
+  };
 }
 
 /**

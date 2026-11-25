@@ -1,6 +1,6 @@
 {
   "name": "tolca-safe-pay",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Drop-in safety check for x402 agent payments: before paying a new seller, ask Tolca payment-check (OFAC SDN wallet screen, official USDC, Coinbase Bazaar price and wallet match) and refuse block, stop on review.",
   "type": "module",
   "main": "./index.js",

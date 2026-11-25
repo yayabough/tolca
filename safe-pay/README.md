@@ -61,6 +61,24 @@ const api = wrapAxiosWithPayment(axios.create(), withSafePay(client));
 // On a stopped payment, getSafePayDecision(error) returns the decision.
 ```
 
+## Use it as a before-payment hook (frameworks that create their own client)
+
+Some frameworks create the x402 client for you and take a hook instead, for example a `beforePayment` option. `tolcaBeforePayment` returns that hook. Give it an x402Client that pays Tolca's $0.01 check (same wallet or a small separate one):
+
+```js
+import { x402Client } from "@x402/fetch";
+import { ExactEvmScheme } from "@x402/evm";
+import { tolcaBeforePayment } from "tolca-safe-pay";
+
+const checkClient = new x402Client().register("eip155:8453", new ExactEvmScheme(account));
+const beforePayment = tolcaBeforePayment({ client: checkClient });
+
+// Any x402Client:
+client.onBeforePaymentCreation(beforePayment);
+```
+
+It takes the same options as `withSafePay` (`onReview`, `onDecision`, `trustedPayTo`, `failOpen`, ...). On a stopped payment, `getSafePayDecision(error)` returns the decision.
+
 ## What it costs
 
 - One check costs $0.01 in USDC on Base, paid with the same client to Tolca's wallet `0x35F0B86a7E33F561faf7cfa5654CAd9162C4A17d`.

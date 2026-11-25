@@ -95,6 +95,28 @@ export declare class SafePayError extends Error {
 /** Adds the check to an x402Client (works with @x402/fetch, @x402/axios and anything built on x402Client). */
 export declare function withSafePay<C extends X402ClientLike>(client: C, options?: SafePayOptions): C;
 
+/** An x402Client that can pay Tolca's check (any x402Client from @x402/fetch or @x402/core 2.x). */
+export interface X402PayingClientLike {
+  createPaymentPayload(paymentRequired: any): Promise<any>;
+}
+
+/** A before-payment hook: return nothing to pay, or `{ abort: true, reason }` to stop the payment. */
+export type SafePayHook = (context: {
+  paymentRequired: any;
+  selectedRequirements: any;
+}) => Promise<void | { abort: true; reason: string }>;
+
+export interface TolcaBeforePaymentOptions extends SafePayOptions {
+  /** The x402Client that pays Tolca's check ($0.01 in USDC on Base). */
+  client: X402PayingClientLike;
+}
+
+/**
+ * A ready-made before-payment hook, for frameworks that take one (for example AgentKit's x402
+ * provider `beforePayment` option, or `x402Client.onBeforePaymentCreation`).
+ */
+export declare function tolcaBeforePayment(options: TolcaBeforePaymentOptions): SafePayHook;
+
 /** Drop-in for wrapFetchWithPayment(fetch, client). Throws SafePayError when a payment is stopped. */
 export declare function wrapFetchWithSafePay(
   fetch: typeof globalThis.fetch,
